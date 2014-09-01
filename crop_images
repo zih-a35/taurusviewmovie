@@ -1,13 +1,13 @@
-!#/bin/bash
+#!/bin/bash
 cd `dirname $0`
 mypwd=$PWD
 
 mkdir stat util user jobs
 
-find ./taurusview/ >/dev/shm/filelist.txt
+find ${mypwd}/taurusview/ | sort >/dev/shm/filelist.txt
 cd /dev/shm
 
-while read line
+while read line; do
   pdf2htmlEX --embed-image 0 $line
   base=`basename $line`
   name=${base%.*}
@@ -15,5 +15,5 @@ while read line
   convert -crop 603x216+50+948 bg1.png ${mypwd}/util/${name}.png
   convert -crop 600x220+55+1291 bg1.png ${mypwd}/user/${name}.png
   convert -crop 591x223+65+62 bg2.png ${mypwd}/jobs/${name}.png
-done
+done < /dev/shm/filelist.txt
 
