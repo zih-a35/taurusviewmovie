@@ -2,7 +2,9 @@
 cd `dirname $0`
 mypwd=$PWD
 
-mkdir stat util user jobs
+LIST="stat util user jobs"
+
+mkdir $LIST
 
 find ${mypwd}/taurusview/ | sort >/dev/shm/filelist.txt
 cd /dev/shm
@@ -16,4 +18,11 @@ while read line; do
   convert -crop 600x220+55+1291 bg1.png ${mypwd}/user/${name}.png
   convert -crop 591x223+65+62 bg2.png ${mypwd}/jobs/${name}.png
 done < /dev/shm/filelist.txt
+
+# to check output, create video
+for FOLDER in $LIST; do
+  cd $FOLDER
+  mencoder mf://*.png -mf w=800:h=600:fps=25:type=png -ovc lavc -lavcopts vcodec=mpeg4:mbd=2:trell -oac copy -o output.avi
+  cd ..
+done
 
