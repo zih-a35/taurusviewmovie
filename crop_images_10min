@@ -1,0 +1,78 @@
+#!/bin/bash
+cd `dirname $0`
+mypwd=$PWD
+
+LIST="stat_10min util_10min user_10min jobs_10min all_10min"
+
+mkdir $LIST
+cd /dev/shm
+mkdir 10min
+find /home/taurusview/ | grep -e'_[0-9]0_' | sort >/dev/shm/10min/filelist_10min.txt
+cd 10min/
+
+###### Jobs ######
+convert -size 16x16 -depth 8 -fill red -draw 'rectangle 16,16 0,0' label:' ' quader_red.png
+convert -size 16x16 -depth 8 -fill orange -draw 'rectangle 16,16 0,0' label:' ' quader_orange.png
+convert -size 16x16 -depth 8 -fill yellow -draw 'rectangle 16,16 0,0' label:' ' quader_yellow.png
+convert -background '#e0e0e0' -depth 8 -pointsize 16 -font Helvetica -fill black label:'Pending Jobs                         QoS           Resources           Priority' label_jobs.png
+
+composite -gravity north -geometry -38+0 quader_red.png label_jobs.png label_jobs.png
+composite -gravity north -geometry +40+0 quader_orange.png label_jobs.png label_jobs.png
+composite -gravity north -geometry +158+0 quader_yellow.png label_jobs.png label_jobs.png
+
+###### util ######
+convert -background '#e0e0e0' -pointsize 16 -font Helvetica -fill black label:'Utilization History(%)          Unavailable       Long Jobs       Short Jobs' label_util.png
+convert -size 16x16 -depth 8 -fill pink -draw 'rectangle 16,16 0,0' label:' ' quader_pink.png
+convert -size 16x16 -depth 8 -fill blue -draw 'rectangle 16,16 0,0' label:' ' quader_blue.png
+convert -size 16x16 -depth 8 -fill SkyBlue1 -draw 'rectangle 16,16 0,0' label:' ' quader_hellblau.png
+
+composite -gravity north -geometry -65+0 quader_pink.png label_util.png label_util.png
+composite -gravity north -geometry +47+0 quader_blue.png label_util.png label_util.png
+composite -gravity north -geometry +150+0 quader_hellblau.png label_util.png label_util.png
+
+###### user ######
+convert -background '#e0e0e0' -depth 8 -pointsize 16 -font Helvetica -fill black label:'Top Accounts(Cores)' label_user.png
+
+###### Leere Boxen ######
+convert -size 1536x864 -depth 8 -background '#e0e0e0' label:' ' empty.png
+convert -size 610x235 -depth 8 -background '#e0e0e0' label:' ' empty2.png
+
+###### Boxen mit Labels ######
+composite -gravity north -geometry -65+0 label_jobs.png empty2.png label_jobs.png
+composite -gravity north -geometry -50+0 label_util.png empty2.png label_util.png
+composite -gravity north -geometry -215+0 label_user.png empty2.png label_user.png
+
+while read line; do
+  pdf2htmlEX --embed-image 0 $line
+  base=`basename $line`
+  name=${base%.*}
+  convert -crop 773x758+10+10 bg1.png ${mypwd}/stat_10min/${name}.png
+  convert -crop 603x217+50+950 bg1.png ${mypwd}/util_10min/${name}.png
+  convert -crop 595x216+58+1297 bg1.png ${mypwd}/user_10min/${name}.png
+  convert -crop 587x223+67+68 bg2.png ${mypwd}/jobs_10min/${name}.png
+
+###### Jobs ######
+composite -gravity west -geometry +0+10 ${mypwd}/jobs_10min/${name}.png label_jobs.png ${mypwd}/jobs_10min/${name}.png
+
+###### util ######
+composite -gravity west -geometry +0+8 ${mypwd}/util_10min/${name}.png label_util.png ${mypwd}/util_10min/${name}.png
+
+###### user ######
+composite -gravity west -geometry +0+8 ${mypwd}/user_10min/${name}.png label_user.png ${mypwd}/user_10min/${name}.png
+
+
+###### alle Bilder in einer Box ######
+composite -gravity east -geometry +0-250 ${mypwd}/util_10min/${name}.png empty.png ${mypwd}/all_10min/${name}.png
+composite -gravity west -geometry +0+0 ${mypwd}/stat_10min/${name}.png ${mypwd}/all_10min/${name}.png ${mypwd}/all_10min/${name}.png
+composite -gravity east -geometry +0+250 ${mypwd}/user_10min/${name}.png ${mypwd}/all_10min/${name}.png ${mypwd}/all_10min/${name}.png
+composite -gravity east -geometry +0+0 ${mypwd}/jobs_10min/${name}.png ${mypwd}/all_10min/${name}.png ${mypwd}/all_10min/${name}.png
+
+###### Löschen aller Bilder ######
+rm -r ${mypwd}/util_10min/${name}.png ${mypwd}/user_10min/${name}.png ${mypwd}/jobs_10min/${name}.png ${mypwd}/stat_10min/${name}.png
+
+done < /dev/shm/10min/filelist_10min.txt
+
+# to check output, create video
+
+  cd ${mypwd}/all_10min/
+  mencoder mf://*.png -mf w=1536:h=864:fps=25:type=png -ovc lavc -lavcopts vcodec=mpeg4:mbd=2:trell:vbitrate=2000 -oac copy -o output.avi
