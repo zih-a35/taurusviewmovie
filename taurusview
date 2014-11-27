@@ -1,0 +1,9 @@
+#!/bin/dash
+cd /home/william/taurusview
+
+while true; do
+  timestamp=`date +%Y-%m-%d-%H_%M_%S`
+  wkhtmltopdf https://zih:\$HPC.view951@iak.zih.tu-dresden.de/taurusview/ $timestamp.pdf &
+  sleep 120
+done
+
